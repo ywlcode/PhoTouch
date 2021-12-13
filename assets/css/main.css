@@ -1,0 +1,106 @@
+* {
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    position: relative;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x:hidden;
+    background-color:whitesmoke;
+}
+
+.main {
+    position: relative;
+    display: flex;
+    min-height: 100vh;
+}
+
+.side {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 78px;
+    transition: all 0.5s ease;
+    background-color:rgb(34, 33, 33);
+}
+
+.side * {
+    color: white;
+    display: block;
+    font-size: 25px;
+    margin:  15px auto;
+    text-align:center;
+    align-items: center;
+}
+
+.tt {
+    position: relative;
+    top:22px;
+    left:80px;
+    font: 500 20px '';
+    opacity: 0;
+    transition: .5s;
+}
+
+.sidebar.active {
+    width: 240px
+}
+
+.li:hover{
+    color: #fff;
+}
+
+.content {
+    position:absolute;
+    height:100%;
+    width: calc(100%-78px);
+    left: 78px;
+    transition: all 0.5s ease;
+}
+
+.side.active~.content {
+    width: calc(100% - 240px);
+    left: 240px;
+}
+
+.uplan {
+    width: 100%;
+    height: 70px;
+    background-color: rgba(114, 112, 112,0.5);
+}
+
+ul {
+    position:absolute;
+    top:15px;
+}
+
+#login {
+    display:none;
+}
+
+.indeximgs {
+    display: flex;
+
+    /* Put a card in the next row when previous cards take all width */
+    flex-wrap: wrap;
+    justify-content:center;
+}
+
+.show {
+    /* There will be 4 cards per row */
+    flex: 1 0 calc(96%/4);
+    padding-left: 8px;
+    padding-right: 8px;
+    margin: 4px;
+    min-width: 270px;
+    min-height: 270px;
+    margin-top: 10px;
+}
+
+img {
+    width: 100%;
+    height:100%;
+}

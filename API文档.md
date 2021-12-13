@@ -5,7 +5,7 @@
 | GET  | "/"              | 无                      | 主页面                                       | HTML                                     | 0                |
 | GET  | "/login"         | 无                      | 登录页面                                     | HTML                                     | 0                |
 | GET  | "/signup"        | 无                      | 注册页面                                     | HTML                                     | 0                |
-| GET  | "wj"             | 无                      | 忘记密码页面                                 | HTML                                     | 0                |
+| GET  | "/wj"            | 无                      | 忘记密码页面                                 | HTML                                     | 0                |
 | POST | "/user/login"    | name  && pwd            | 登录表单,设定cookie:user:~~                  | 200 : string: "YES" ,201:string:"NO"     | 0                |
 | POST | "/signup/email"  | email                   | 注册页面                                     | 200 : string: "YES" ,201:string:"NO"     | 0                |
 | POST | "/signup/up"     | code                    | 注册页面                                     | 200 : string: "YES" ,201:string:"NO"     | 0                |
