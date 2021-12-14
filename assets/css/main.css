@@ -1,6 +1,7 @@
 * {
     box-sizing: border-box;
     font-family: "Poppins", sans-serif;
+    text-decoration: none;
 }
 
 body {
@@ -27,44 +28,44 @@ body {
     background-color:rgb(34, 33, 33);
 }
 
-.side * {
-    color: white;
+.box {
     display: block;
-    font-size: 25px;
-    margin:  15px auto;
-    text-align:center;
-    align-items: center;
+    height: 70px;
+    width: 85%;
+    border-radius: 5px;
+    margin: 5px;
+    transition: .3s;
+    color: rgb(160, 160, 175);
 }
 
-.tt {
+.box i {
+    font-size: 45px;
+    position: absolute;
+    margin: 7px 0 0 13px;
+}
+
+.box span {
     position: relative;
-    top:22px;
-    left:80px;
+    top: 22px;
+    left: 78px;
     font: 500 20px '';
     opacity: 0;
-    transition: .5s;
+    transition: .1s;
 }
 
-.sidebar.active {
-    width: 240px
-}
-
-.li:hover{
-    color: #fff;
+.icon-fanhuijiantou {
+    position: absolute;
+    left: 10px;
 }
 
 .content {
-    position:absolute;
+    position: absolute;
     height:100%;
     width: calc(100%-78px);
     left: 78px;
     transition: all 0.5s ease;
 }
 
-.side.active~.content {
-    width: calc(100% - 240px);
-    left: 240px;
-}
 
 .uplan {
     width: 100%;
@@ -72,9 +73,21 @@ body {
     background-color: rgba(114, 112, 112,0.5);
 }
 
-ul {
-    position:absolute;
-    top:15px;
+.upload {
+    display: block;
+    width: 200px;
+    height: 50px;
+    color: white;
+    float: right;
+    margin-top:20px;
+}
+
+.upload i {
+    font-size: 30px;
+}
+
+.upload span {
+    font: 500 27px '';
 }
 
 #login {
