@@ -13,7 +13,7 @@
     <div class="main">
         <div class="side">
             <a href="#" class="box" id="z1"><i class="iconfont icon-wode"></i><span>未登录</span></a>
-            <a href="#" class="box" id="z2"><i class="iconfont icon-chufadaodaxiao"></i><span>收起</span></a>
+            <a class="box" id="z2"><i class="iconfont icon-chufadaodaxiao"></i><span>收起</span></a>
             <a href="#" class="box" id="z3"><i class="iconfont icon-remen"></i><span>热门</span></a>
             <a href="#" class="box" id="z4"><i class="iconfont icon-zan"></i><span>赞过的</span></a>
             <a href="#" class="box" id="z5"><i class="iconfont icon-fenxiang"></i><span>分享过</span></a>
@@ -29,54 +29,11 @@
                 <a href="#" class="upload" id="z12"><i class="iconfont icon-zengjia"></i><span>上传图片</span></a>
             </div>
             <div class="indeximgs">
+                {{range .imgsrc}}
                 <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
+                    <img src="{{.Url}}" alt="">
                 </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
-                <div class="show">
-                    <img src="https://bu.dusays.com/2021/12/13/f4f32a7dc7d94.jpg" alt="">
-                </div>
+                {{end}}
             </div>
         </div>
     </div>
