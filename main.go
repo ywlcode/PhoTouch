@@ -50,7 +50,7 @@ type uu struct {
 }
 
 type imgpublic struct {
-	Url string
+	Url string `json:"minurl"`
 }
 
 var Config Key
@@ -190,9 +190,9 @@ func AddimgFromuser(IDuser int) {
 	}
 }
 
-func SelectByurl() []imgpublic {
+func randminimg16() []imgpublic {
 	var albums []imgpublic
-	rows, err := db.Query("SELECT minurl FROM imgpublic LIMIT 16")
+	rows, err := db.Query("SELECT minurl FROM imgpublic ORDER BY RAND() LIMIT 16")
 	if err != nil {
 		log.Fatal(err)
 		return nil
@@ -213,6 +213,21 @@ func SelectByurl() []imgpublic {
 	return albums
 }
 
+func bigimgurl(table string, minurl string) string {
+	var alb imgpublic
+	rows, err := db.Query("SELECT url FROM "+table+" WHERE minurl = ?", minurl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		_ = rows.Scan(&alb.Url)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return alb.Url
+}
 func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
@@ -223,12 +238,19 @@ func main() {
 	router.GET("/login", login)
 	router.GET("/signup", signup)
 	router.GET("/wj", wj)
+	router.POST("/user/login")
+	//router.POST("/user/login")
+	//router.POST("/signup/email")
+	//router.POST("/signup/up")
+	router.GET("/img/rand", randimgpublic)
+	router.POST("/img/big", bigimgpublic)
+
 	router.POST("/upload", uploadimgfromuser)
 	router.Run("127.0.0.1:7000")
 }
 
 func index(c *gin.Context) {
-	con := SelectByurl()
+	con := randminimg16()
 	data := make(map[string][]imgpublic) // 注意这里只能是 !!! map
 	data["imgsrc"] = con                 // 如何随机推荐图片
 	c.HTML(http.StatusOK, "index.html", data)
@@ -255,4 +277,15 @@ func uploadimgfromuser(c *gin.Context) {
 	c.String(http.StatusOK, fmt.Sprintf("%d files uploaded!", len(files)))
 	ID := 2 // 用户记录ID :: 如何快速获取ID
 	AddimgFromuser(ID)
+}
+
+func randimgpublic(c *gin.Context) {
+	con := randminimg16()
+	c.JSON(http.StatusOK, con)
+}
+
+func bigimgpublic(c *gin.Context) {
+	kkurl := c.PostForm("minurl") // 提取参数
+	ans := bigimgurl("imgpublic", kkurl)
+	c.String(http.StatusOK, ans)
 }
