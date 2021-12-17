@@ -277,6 +277,8 @@ func main() {
 	}
 	router.SetHTMLTemplate(t)
 
+	PathExists("tempimg")
+
 	router.GET("/", index)
 	router.GET("/login", login)
 	router.GET("/signup", signup)

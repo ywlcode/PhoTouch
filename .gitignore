@@ -1,3 +1,5 @@
 # 忽略 config.json文件上传仓库
 config.json
 静态资源更新命令.txt
+base
+tempimg
