@@ -72,7 +72,7 @@ $(document).ready(function () {
         var oClosebtn = document.createElement("span");
         oClosebtn.innerHTML = "×";
         oClosebtn.style.fontSize = "65px"; 
-        oClosebtn.style.color = "black"
+        oClosebtn.style.color = "white"
         oShow.appendChild(oClosebtn);
         oClosebtn.onclick = oClose;
         //bgObj.onclick = oClose;

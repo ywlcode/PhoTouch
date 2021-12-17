@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,10 +13,13 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"photouch/bindata"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/disintegration/imaging"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -228,12 +232,51 @@ func bigimgurl(table string, minurl string) string {
 	}
 	return alb.Url
 }
+
+func loadTemplate() (*template.Template, error) {
+	t := template.New("")
+	sum := 0
+	for _, name := range bindata.AssetNames() {
+		if !strings.HasSuffix(name, ".html") {
+			continue
+		}
+		asset, err := bindata.Asset(name)
+		if err != nil {
+			continue
+		}
+		name := strings.Replace(name, "assets/templates/", "", 1)
+		t, err = t.New(name).Parse(string(asset))
+		if err != nil {
+			log.Fatal(err)
+		}
+		sum++
+		fmt.Println(sum, ":", name)
+	}
+	if sum == 4 {
+		fmt.Println(time.Now(), "html templates init succeeded ! ! ! ! ! !")
+	}
+	return t, nil
+}
+
 func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-	router.Static("/assets", "./assets")
-	router.LoadHTMLGlob("assets/templates/*")
+
+	fs := assetfs.AssetFS{
+		Asset:     bindata.Asset,
+		AssetDir:  bindata.AssetDir,
+		AssetInfo: nil,
+		Prefix:    "assets",
+	}
+	router.StaticFS("/assets", &fs)
+
+	t, err := loadTemplate()
+	if err != nil {
+		log.Fatal(err)
+	}
+	router.SetHTMLTemplate(t)
+
 	router.GET("/", index)
 	router.GET("/login", login)
 	router.GET("/signup", signup)
@@ -241,12 +284,12 @@ func main() {
 	router.POST("/user/login")
 	//router.POST("/user/login")
 	//router.POST("/signup/email")
-	//router.POST("/signup/up")
+	//router.POST("/signup/up")s
 	router.GET("/img/rand", randimgpublic)
 	router.POST("/img/big", bigimgpublic)
 
 	router.POST("/upload", uploadimgfromuser)
-	router.Run("127.0.0.1:7000")
+	router.Run(":8000")
 }
 
 func index(c *gin.Context) {
