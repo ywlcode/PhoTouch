@@ -67,6 +67,7 @@ $(document).ready(function () {
             oShow.style.display = 'none';
             document.body.style.removeProperty('overflow-y');
             document.querySelector(".main").removeChild(bgObj);
+            $("#tanchu img").attr("src","")
         }
 
         var oClosebtn = document.createElement("span");

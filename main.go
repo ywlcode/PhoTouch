@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -13,13 +12,10 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"photouch/bindata"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/disintegration/imaging"
-	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -233,6 +229,7 @@ func bigimgurl(table string, minurl string) string {
 	return alb.Url
 }
 
+/* // 打包静态文件 这里导入html模板 不适合开发阶段
 func loadTemplate() (*template.Template, error) {
 	t := template.New("")
 	sum := 0
@@ -257,12 +254,15 @@ func loadTemplate() (*template.Template, error) {
 	}
 	return t, nil
 }
+*/
 
 func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
-
+	router.Static("/assets", "./assets")
+	router.LoadHTMLGlob("assets/templates/*")
+	/*  // 打包静态文件 不适合开发阶段
 	fs := assetfs.AssetFS{
 		Asset:     bindata.Asset,
 		AssetDir:  bindata.AssetDir,
@@ -270,13 +270,12 @@ func main() {
 		Prefix:    "assets",
 	}
 	router.StaticFS("/assets", &fs)
-
 	t, err := loadTemplate()
 	if err != nil {
 		log.Fatal(err)
 	}
 	router.SetHTMLTemplate(t)
-
+	*/
 	PathExists("tempimg")
 
 	router.GET("/", index)
