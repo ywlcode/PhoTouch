@@ -284,7 +284,7 @@ func main() {
 	router.POST("/user/login")
 	//router.POST("/user/login")
 	//router.POST("/signup/email")
-	//router.POST("/signup/up")s
+	//router.POST("/signup/up")
 	router.GET("/img/rand", randimgpublic)
 	router.POST("/img/big", bigimgpublic)
 
