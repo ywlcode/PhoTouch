@@ -3,16 +3,21 @@ package main
 import (
 	"bytes"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
+	"photouch/bindata"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/disintegration/imaging"
@@ -20,6 +25,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+// 运行密钥,从config.json中读取
 type Key struct {
 	Email_user string `json:"email_user"`
 	Email_key  string `json:"email_key"`
@@ -29,6 +35,7 @@ type Key struct {
 	Token_key  string `json:"token"`
 }
 
+// 7bu 图床上传返回信息读取结构体
 type bu struct {
 	Id     string `json:"id"`
 	Imgurl string `json:"url"`
@@ -38,7 +45,8 @@ type buimg struct {
 	Data bu `json:"data"`
 }
 
-type uu struct {
+// 数据库图片信息表数据行对应结构体
+type imgrow struct {
 	Url_du   string
 	Minurl   string
 	Year     int
@@ -49,14 +57,44 @@ type uu struct {
 	Imgminid string
 }
 
-type imgpublic struct {
+// 图片 一般信息结构体
+type imginformation struct {
 	Url string `json:"minurl"`
 }
 
-var Config Key
-var db *sql.DB
+type userdb struct {
+	userid int
+	email  string
+	pwd    string
+}
 
-func init() { // 初始化config 和 mysql数据库
+// 点赞结构体
+type gooddb struct {
+	userid int
+	minurl string
+}
+
+// 数据库句柄
+var db *sql.DB
+var Config Key
+
+// 此时随机值
+
+var todayrand string
+
+// mapcookie结构
+type usermanage struct {
+	userid int
+	last   time.Time
+}
+
+// 管理用户登录
+var live map[string]usermanage
+
+// 初始化config , mysql数据库句柄 和 随机值
+func init() {
+	fmt.Println("初始化")
+	fmt.Println("----------------------------------")
 	keys, err := ioutil.ReadFile("config.json")
 	if err != nil {
 		fmt.Println("open config.json failed")
@@ -80,8 +118,12 @@ func init() { // 初始化config 和 mysql数据库
 		os.Exit(1)
 	}
 	fmt.Println("Connected database succeeded")
+	live = make(map[string]usermanage)
+	todayrand = strconv.Itoa(rand.Intn(100000))
+	fmt.Println("----------------------------------")
 }
 
+//将指定图片压缩生成缩略图保存到"tempimg/temp.jpg"
 func minimg(path string, imagename string) {
 	imgData, _ := ioutil.ReadFile(path + imagename)
 	buf := bytes.NewBuffer(imgData)
@@ -97,6 +139,7 @@ func minimg(path string, imagename string) {
 	}
 }
 
+//上传指定图片到7bu图床
 func uploadimg(path string, name string) buimg {
 	url := "https://7bu.top/api/upload"
 	file, err := os.Open(path + name)
@@ -130,7 +173,8 @@ func uploadimg(path string, name string) buimg {
 	return ans
 }
 
-func Addimgtodb(alb uu, table string) {
+//添加新图片到指定数据表
+func Addimgtodb(alb imgrow, table string) {
 	result, err := db.Exec("INSERT INTO "+table+" (url,minurl,year,month,day,userid,imgbuid,imgminid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", alb.Url_du, alb.Minurl, alb.Year, alb.Month, alb.Day, alb.Userid, alb.Imgbuid, alb.Imgminid)
 	if err != nil {
 		log.Fatal(err)
@@ -141,6 +185,7 @@ func Addimgtodb(alb uu, table string) {
 	}
 }
 
+//查看目录是否创建,未创建则创建
 func PathExists(path string) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -155,6 +200,7 @@ func PathExists(path string) {
 	}
 }
 
+// 处理用户上传的图片,发送到7bu图床
 func AddimgFromuser(IDuser int) {
 	pathtemp := "tempimg" // tempimg文件夹存上传的图片
 	file, err := ioutil.ReadDir(pathtemp)
@@ -166,7 +212,7 @@ func AddimgFromuser(IDuser int) {
 		name := ff.Name()
 		kk := uploadimg(pathtemp+"/", name)
 		timeimg := time.Now()
-		var imgdb uu
+		var imgdb imgrow
 		imgdb.Url_du = kk.Data.Imgurl
 		imgdb.Userid = IDuser
 		imgdb.Imgbuid = kk.Data.Id
@@ -190,16 +236,17 @@ func AddimgFromuser(IDuser int) {
 	}
 }
 
-func randminimg16() []imgpublic {
-	var albums []imgpublic
-	rows, err := db.Query("SELECT minurl FROM imgpublic ORDER BY RAND() LIMIT 16")
+// 检索随机32张分享图片的minurl,返回imgpublic
+func randminimg32() []imginformation {
+	var albums []imginformation
+	rows, err := db.Query("SELECT minurl FROM imgpublic ORDER BY RAND() LIMIT 32")
 	if err != nil {
 		log.Fatal(err)
 		return nil
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var alb imgpublic
+		var alb imginformation
 		if err := rows.Scan(&alb.Url); err != nil {
 			log.Fatal(err)
 			return nil
@@ -213,8 +260,9 @@ func randminimg16() []imgpublic {
 	return albums
 }
 
+// 通过minurl和数据表名检索对应大图url并返回
 func bigimgurl(table string, minurl string) string {
-	var alb imgpublic
+	var alb imginformation
 	rows, err := db.Query("SELECT url FROM "+table+" WHERE minurl = ?", minurl)
 	if err != nil {
 		log.Fatal(err)
@@ -229,7 +277,7 @@ func bigimgurl(table string, minurl string) string {
 	return alb.Url
 }
 
-/* // 打包静态文件 这里导入html模板 不适合开发阶段
+// 打包静态文件 这里导入html模板 不适合开发阶段
 func loadTemplate() (*template.Template, error) {
 	t := template.New("")
 	sum := 0
@@ -254,12 +302,84 @@ func loadTemplate() (*template.Template, error) {
 	}
 	return t, nil
 }
-*/
 
+// 通过minurl 改变私有或私有状态
+func changeimgquan(minurl string, oldtable string, newtable string) {
+	var alb imgrow
+	rows, err := db.Query("SELECT * FROM "+oldtable+" WHERE minurl = ?", minurl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	var id int
+	for rows.Next() {
+		if err := rows.Scan(&id, &alb.Url_du, &alb.Minurl, &alb.Year, &alb.Month, &alb.Day, &alb.Userid, &alb.Imgbuid, &alb.Imgminid); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	Addimgtodb(alb, newtable)
+	_, _ = db.Exec("delete from "+oldtable+" WHERE minurl = ?", minurl)
+}
+
+// 检索出用户的某年某月的照片的minurl列表, 年, 月, 用户id 返回 imgpublic切片
+func SelectByMonth(year string, month string, userid int) []imginformation {
+	var albums []imginformation
+	rows, err := db.Query("SELECT minurl FROM imguser WHERE year = ? AND month = ? AND userid = ?", year, month, userid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var alb imginformation
+		if err := rows.Scan(&alb.Url); err != nil {
+			log.Fatal(err)
+		}
+		albums = append(albums, alb)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return albums
+}
+
+// base64编码
+func encodebase64(data string) string {
+	// Base64 Standard Encoding
+	sEnc := base64.StdEncoding.EncodeToString([]byte(data))
+	return sEnc
+}
+
+// 自定义中间件 验证是否登录
+func Auth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		val, _ := c.Cookie("user")
+		tt, ok := live[val]
+		if ok {
+			now := time.Now()
+			if now.Before(tt.last) {
+				c.Set("Auth", "YES")
+				c.Set("id", tt.userid)
+			} else {
+				c.Set("Auth", "NO")
+				c.Set("id", 0)
+			}
+		} else {
+			c.Set("Auth", "NO")
+			c.Set("id", 0)
+		}
+		c.Next()
+	}
+}
+
+// 主程序
 func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
+	router.Use(Auth())
 	router.Static("/assets", "./assets")
 	router.LoadHTMLGlob("assets/templates/*")
 	/*  // 打包静态文件 不适合开发阶段
@@ -278,25 +398,35 @@ func main() {
 	*/
 	PathExists("tempimg")
 
+	// 四个页面
 	router.GET("/", index)
 	router.GET("/login", login)
 	router.GET("/signup", signup)
 	router.GET("/wj", wj)
-	router.POST("/user/login")
-	//router.POST("/user/login")
-	//router.POST("/signup/email")
-	//router.POST("/signup/up")
-	router.GET("/img/rand", randimgpublic)
-	router.POST("/img/big", bigimgpublic)
 
-	router.POST("/upload", uploadimgfromuser)
+	//不需要登录认证的
+	router.POST("/user/login", loginkk) // 登录验证
+	//router.POST("/signup/email") // 发送验证码 重复注册问题
+	//router.POST("/signup/up") // 检验验证码正确性
+	router.GET("/img/rand", randimgpublic)
+	//router.POST("/download", downloadimg) //下载图片地址
+	router.POST("/img/big", bigimgpublic) // 获取大图API
+
+	// 需要登录认证的
+	//router.POST("/img/user/like")
+	//router.POST("/img/user/all")
+	//router.POST("/img/user/time")
+	//router.POST("/img/user/month")
+	router.POST("/upload", uploadimgfromuser) // 用户上传图片
+	router.POST("/change", changeimg)         // 改变公有私有权限, 分享或取消分享
+	router.POST("/good", goodgood)            //点赞
 	router.Run(":8000")
 }
 
 func index(c *gin.Context) {
-	con := randminimg16()
-	data := make(map[string][]imgpublic) // 注意这里只能是 !!! map
-	data["imgsrc"] = con                 // 如何随机推荐图片
+	con := randminimg32()
+	data := make(map[string][]imginformation) // 注意这里只能是 !!! map
+	data["imgsrc"] = con                      // 如何随机推荐图片
 	c.HTML(http.StatusOK, "index.html", data)
 }
 
@@ -312,6 +442,39 @@ func wj(c *gin.Context) {
 	c.HTML(http.StatusOK, "wj.html", "")
 }
 
+func loginkk(c *gin.Context) {
+	email := c.PostForm("name")
+	pwd := c.PostForm("pwd")
+	var albums userdb
+	rows, err := db.Query("SELECT * FROM user WHERE email = ?", email)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err := rows.Scan(&albums.userid, &albums.email, &albums.pwd); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	if pwd == albums.pwd {
+		now := time.Now()
+		timechu := strconv.Itoa(int(now.Unix()))
+		cookiejar := strconv.Itoa(albums.userid) + todayrand + timechu
+		cookie := encodebase64(cookiejar)
+		c.SetCookie("user", cookie, 1800, "/", "", false, false)
+		//参数 1.key 2.对应的值 3.过期时间,单位秒 4.cookie 所在的目录
+		// 5.cookie 作用范围 5.是否只能通过 https 访问 6.是否对js隐藏(js不能操作)
+		ma := usermanage{userid: albums.userid, last: now.Add(30 * time.Minute)}
+		live[cookie] = ma
+		c.JSON(200, gin.H{"ss": "200"})
+	} else {
+		c.JSON(201, gin.H{"ss": "400"})
+	}
+}
+
 func uploadimgfromuser(c *gin.Context) {
 	form, _ := c.MultipartForm()
 	files := form.File["files[]"]
@@ -319,12 +482,13 @@ func uploadimgfromuser(c *gin.Context) {
 		c.SaveUploadedFile(file, "tempimg/"+file.Filename)
 	}
 	c.String(http.StatusOK, fmt.Sprintf("%d files uploaded!", len(files)))
-	ID := 2 // 用户记录ID :: 如何快速获取ID
+	fmt.Printf("%d files uploaded!", len(files))
+	ID := c.MustGet("id").(int)
 	AddimgFromuser(ID)
 }
 
 func randimgpublic(c *gin.Context) {
-	con := randminimg16()
+	con := randminimg32()
 	c.JSON(http.StatusOK, con)
 }
 
@@ -332,4 +496,45 @@ func bigimgpublic(c *gin.Context) {
 	kkurl := c.PostForm("minurl") // 提取参数
 	ans := bigimgurl("imgpublic", kkurl)
 	c.String(http.StatusOK, ans)
+}
+
+func changeimg(c *gin.Context) {
+	minurl := c.PostForm("minurl") // 提取参数
+	old := c.PostForm("old")
+	new := c.PostForm("new")
+	changeimgquan(minurl, old, new)
+	c.String(http.StatusOK, "YES")
+}
+
+func goodgood(c *gin.Context) {
+	minurl := c.PostForm("minurl")
+	ID := c.MustGet("id").(int)
+	var albums []gooddb
+	rows, err := db.Query("SELECT * FROM good WHERE userid = ? AND minurl = ?", ID, minurl)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var alb gooddb
+		if err := rows.Scan(&alb.userid, &alb.minurl); err != nil {
+			log.Fatal(err)
+		}
+		albums = append(albums, alb)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	if len(albums) >= 1 {
+		_, err = db.Exec("delete from good WHERE userid = ?", ID)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		_, err = db.Exec("INSERT INTO good (userid,minurl) VALUES (?, ?)", ID, minurl)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	c.String(http.StatusOK, "ok")
 }

@@ -47,7 +47,7 @@ DESCRIBE imguser;
 DROP TABLE IF EXISTS good;  /*  图片点赞数 */
 CREATE TABLE good (
   userid INT NOT NULL,
-  imgid  INT NOT NULL
+  imgid  INT NOT NULL,
 );
 
 DESCRIBE good;
