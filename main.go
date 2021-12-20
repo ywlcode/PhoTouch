@@ -134,13 +134,13 @@ func minimg(path string, imagename string) {
 	buf := bytes.NewBuffer(imgData)
 	image, err := imaging.Decode(buf)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		return
 	}
 	image = imaging.Fill(image, 400, 400, imaging.Center, imaging.Lanczos)
 	err = imaging.Save(image, path+"temp.jpg")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 }
 
@@ -149,7 +149,7 @@ func uploadimg(path string, name string) buimg {
 	url := "https://7bu.top/api/upload"
 	file, err := os.Open(path + name)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	defer file.Close()
 	body := &bytes.Buffer{}
@@ -158,7 +158,7 @@ func uploadimg(path string, name string) buimg {
 	_, _ = io.Copy(part, file)
 	err = writer.Close()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	httpRequest, _ := http.NewRequest("POST", url, body)
 	httpRequest.Header.Add("token", Config.Token_key) // 请求头自定义参数
@@ -173,7 +173,7 @@ func uploadimg(path string, name string) buimg {
 	var ans buimg
 	err = json.Unmarshal(respbody, &ans)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	return ans
 }
@@ -182,11 +182,11 @@ func uploadimg(path string, name string) buimg {
 func Addimgtodb(alb imgrow, table string) {
 	result, err := db.Exec("INSERT INTO "+table+" (url,minurl,year,month,day,userid,imgbuid,imgminid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", alb.Url_du, alb.Minurl, alb.Year, alb.Month, alb.Day, alb.Userid, alb.Imgbuid, alb.Imgminid)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	_, err = result.LastInsertId()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 }
 
@@ -199,7 +199,7 @@ func PathExists(path string) {
 	if os.IsNotExist(err) {
 		err = os.MkdirAll(path, os.ModePerm)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		return
 	}
@@ -210,7 +210,7 @@ func AddimgFromuser(IDuser int) {
 	pathtemp := "tempimg" // tempimg文件夹存上传的图片
 	file, err := ioutil.ReadDir(pathtemp)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		return
 	}
 	for _, ff := range file {
@@ -224,7 +224,7 @@ func AddimgFromuser(IDuser int) {
 		imgdb.Year = timeimg.Year()
 		imgdb.Month = int(timeimg.Month())
 		imgdb.Day = timeimg.Day()
-
+		bigurl := kk.Data.Imgurl
 		year := strconv.Itoa(imgdb.Year)
 		month := strconv.Itoa(imgdb.Month)
 		day := strconv.Itoa(imgdb.Day)
@@ -236,7 +236,7 @@ func AddimgFromuser(IDuser int) {
 		imgdb.Minurl = kk.Data.Imgurl
 		imgdb.Imgminid = kk.Data.Id
 		os.Remove(pathtemp + "/temp.jpg")
-		_ = os.Rename(pathtemp+"/"+name, pathnew+"/"+path.Base(kk.Data.Imgurl))
+		_ = os.Rename(pathtemp+"/"+name, pathnew+"/"+path.Base(bigurl))
 		Addimgtodb(imgdb, "imguser") // 上传图片默认保存在私人相册
 	}
 }
@@ -246,20 +246,20 @@ func randminimg32() []imginformation {
 	var albums []imginformation
 	rows, err := db.Query("SELECT minurl FROM imgpublic ORDER BY RAND() LIMIT 32")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		return nil
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var alb imginformation
 		if err := rows.Scan(&alb.Url); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 			return nil
 		}
 		albums = append(albums, alb)
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 		return nil
 	}
 	return albums
@@ -270,14 +270,14 @@ func bigimgurl(table string, minurl string) string {
 	var alb imginformation
 	rows, err := db.Query("SELECT url FROM "+table+" WHERE minurl = ?", minurl)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		_ = rows.Scan(&alb.Url)
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	return alb.Url
 }
@@ -313,17 +313,17 @@ func changeimgquan(minurl string, oldtable string, newtable string) {
 	var alb imgrow
 	rows, err := db.Query("SELECT * FROM "+oldtable+" WHERE minurl = ?", minurl)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	defer rows.Close()
 	var id int
 	for rows.Next() {
 		if err := rows.Scan(&id, &alb.Url_du, &alb.Minurl, &alb.Year, &alb.Month, &alb.Day, &alb.Userid, &alb.Imgbuid, &alb.Imgminid); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	Addimgtodb(alb, newtable)
 	_, _ = db.Exec("delete from "+oldtable+" WHERE minurl = ?", minurl)
@@ -335,18 +335,18 @@ func SelectByMonth(year string, month string, userid int) []imginformation {
 	var albums []imginformation
 	rows, err := db.Query("SELECT minurl FROM imguser WHERE year = ? AND month = ? AND userid = ?", year, month, userid)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var alb imginformation
 		if err := rows.Scan(&alb.Url); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		albums = append(albums, alb)
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	return albums
 }
@@ -357,18 +357,18 @@ func Selectuserpublic(userid int) []imginformation {
 	var albums []imginformation
 	rows, err := db.Query("SELECT minurl FROM imgpublic WHERE userid = ? ORDER BY year DESC,month DESC,day DESC", userid)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var alb imginformation
 		if err := rows.Scan(&alb.Url); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		albums = append(albums, alb)
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	return albums
 }
@@ -378,18 +378,18 @@ func Selectuser(userid int) []imginformation {
 	var albums []imginformation
 	rows, err := db.Query("SELECT minurl FROM imguser WHERE userid = ? ORDER BY year DESC,month DESC,day DESC", userid)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var alb imginformation
 		if err := rows.Scan(&alb.Url); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		albums = append(albums, alb)
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	return albums
 }
@@ -399,18 +399,18 @@ func Selectuserlike(userid int) []imginformation {
 	var albums []imginformation
 	rows, err := db.Query("SELECT minurl FROM good WHERE userid = ?", userid)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var alb imginformation
 		if err := rows.Scan(&alb.Url); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		albums = append(albums, alb)
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	return albums
 }
@@ -454,7 +454,7 @@ func SendMail(toemail string, emailcode string) {
 	auth := smtp.PlainAuth("", "1589292300@qq.com", "kwtrsuisbscdbaac", "smtp.qq.com")
 	err := e.Send("smtp.qq.com:25", auth)
 	if err != nil {
-		log.Println("Send error")
+		fmt.Println(err)
 	}
 }
 
@@ -493,7 +493,7 @@ func main() {
 	router.POST("/user/login", loginkk)
 	router.POST("/signup/email", signupsend)
 	router.POST("/signup/up", signupup)
-	//router.POST("/download", downloadimg)
+	router.GET("/download/:a/:b/:c/:name", downloadimg)
 	router.GET("/img/rand", randimgpublic)
 	router.POST("/img/big", bigimg)
 
@@ -539,16 +539,16 @@ func loginkk(c *gin.Context) {
 	var albums userdb
 	rows, err := db.Query("SELECT * FROM user WHERE email = ?", email)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		if err := rows.Scan(&albums.userid, &albums.email, &albums.pwd); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	if pwd == albums.pwd {
 		now := time.Now()
@@ -611,28 +611,28 @@ func goodgood(c *gin.Context) {
 	var albums []gooddb
 	rows, err := db.Query("SELECT * FROM good WHERE userid = ? AND minurl = ?", ID, minurl)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var alb gooddb
 		if err := rows.Scan(&alb.userid, &alb.minurl); err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 		albums = append(albums, alb)
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 	if len(albums) >= 1 {
 		_, err = db.Exec("delete from good WHERE minurl = ?", minurl)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 	} else {
 		_, err = db.Exec("INSERT INTO good (userid,minurl) VALUES (?, ?)", ID, minurl)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
 	}
 	c.String(http.StatusOK, "ok")
@@ -657,11 +657,11 @@ func signupup(c *gin.Context) {
 		if kk == emailname {
 			result, err := db.Exec("INSERT INTO user (email,pwd) VALUES (?, ?)", emailname, password)
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println(err)
 			}
 			_, err = result.LastInsertId()
 			if err != nil {
-				log.Fatal(err)
+				fmt.Println(err)
 			}
 			delete(code, emailcode)
 			c.String(http.StatusOK, "YES")
@@ -678,7 +678,7 @@ func timeToTime() {
 	ticker := time.Tick(10 * time.Minute) //定义一个10分钟间隔的定时器
 	for tt := range ticker {
 		for iid, n := range live {
-			if time.Now().Before(n.last) {
+			if n.last.Before(time.Now()) {
 				delete(live, iid)
 				fmt.Println(tt, " user "+iid+" out")
 			}
@@ -705,4 +705,20 @@ func userlike(c *gin.Context) {
 	ID := c.MustGet("id").(int)
 	data := Selectuserlike(ID)
 	c.JSON(http.StatusOK, data)
+}
+
+// 用户下载大图
+func downloadimg(c *gin.Context) {
+	year := c.Param("a")
+	month := c.Param("b")
+	day := c.Param("c")
+	name := c.Param("name")
+	path := year + "/" + month + "/" + day + "/" + name
+	c.Header("content-disposition", `attachment; filename=`+name)
+	imgData, err := ioutil.ReadFile("base/" + path)
+	if err != nil {
+		fmt.Println(err)
+	}
+	ContentType := http.DetectContentType(imgData)
+	c.Data(200, ContentType, imgData)
 }

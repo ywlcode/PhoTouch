@@ -12,7 +12,7 @@
                 selectButtonCopy: '选择文件',
                 secondarySelectButtonCopy: '选择多个文件',
                 dropZone: $(this),
-                fileTypeWhiteList: ['jpg', 'png', 'jpeg', 'gif', 'pdf'],
+                fileTypeWhiteList: ['jpg', 'png', 'jpeg'],
                 badFileTypeMessage: '对不起，我们不能接受这种类型的文件。',
                 ajaxUrl: '/upload',
                 testMode: false
@@ -200,7 +200,30 @@
                             for (var i = 0; i < list.length; i++) {
                                 list[i].click();
                             }
-                            alert(result)
+                            alert(result);
+                            if(where == 6) {
+                                $.getJSON("/img/user/all", function (data) {
+                                    $(".indeximgs").empty();
+                                    var len;
+                                    if (!data) {
+                                        len = 0;
+                                    } else {
+                                        len = data.length;
+                                    }
+                                    var p = len % 4;
+                                    for (var i = 0; i < len; i++) {
+                                        var imgList = $('<div class="show"><img src="" alt=""><div id="pp"><div class="blackbox"><i class="iconfont icon-fenxiang goodicon"></i></div></div></div>');
+                                        imgList.find("img").attr("src", data[i].minurl)
+                                        $(".indeximgs").append(imgList);
+                                    }
+                                    if (p || !len) {
+                                        for (var i = 0; i < 4 - p; i++) {
+                                            var imgList = $('<div class="show"><img src="https://bu.dusays.com/2021/12/20/20360f9466d6a.jpg" alt=""></div>');
+                                            $(".indeximgs").append(imgList);
+                                        }
+                                    }
+                                })
+                            }
                         },
                         complete: function () {
                             dom.submitButton.on('click', uploadSubmitHandler);

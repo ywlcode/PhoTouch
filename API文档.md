@@ -9,7 +9,7 @@
 | POST | "/user/login"     | name  && pwd            | 登录表单,设定cookie:user:~~                  | 200 : string: "200" ,201:string:"400" | 0                |
 | POST | "/signup/email"   | email                   | 注册页面                                     | 200 : string: "YES"                   | 0                |
 | POST | "/signup/up"      | code,pwd和emailname     | 注册页面                                     | 200 : string: "YES" 或string:"NO"     | 0                |
-| POST | "/download"       | url                     | 下载                                         | 图片文件                              | 0                |
+| GET  | "/download"       | url                     | 下载                                         | 图片文件                              | 0                |
 | GET  | "/img/rand"       | 无                      | 获取32张随机公有图片的缩略图                 | JSON:URL......                        | 0                |
 | POST | "/img/big"        | minurl                  | 获取图片的大图URL                            | string: URL 大图地址                  | 0                |
 | GET  | "/img/user/like"  | 无                      | 个人点赞过的图片的缩略图及其信息             | jSON:URL......                        | 1                |

@@ -65,19 +65,22 @@ $(document).ready(function () {
         var oShow = document.getElementById('tanchu');
         $.post("/img/big", { minurl: uu }, function (data) {
             $("#tanchu img").attr("src", data)
+            path = "" + data;
+            var pathsp = path.split("/");
+            var dou = '/download/'+pathsp[3]+'/'+pathsp[4]+'/'+pathsp[5]+'/'+pathsp[6];
+            $("#tanchu span a").attr("href", dou)
         });
         document.body.style.overflowY = 'hidden';
         oShow.style.display = 'block';
         oShow.style.width = iWidth + "px";
         oShow.style.height = iHeight + "px";
-
         function oClose() {
             oShow.style.display = 'none';
             document.body.style.removeProperty('overflow-y');
             document.querySelector(".main").removeChild(bgObj);
             $("#tanchu img").attr("src", "")
+            $("#tanchu span a").attr("href", "")
         }
-
         var oClosebtn = document.createElement("span");
         oClosebtn.innerHTML = "×";
         oClosebtn.style.fontSize = "65px";

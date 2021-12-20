@@ -145,12 +145,27 @@ img {
 
 #tanchu span {
     position: fixed;
-    right: 30px;
+    right: 35px;
     top: 5px;
     display: block;
     cursor: pointer;
     color: #fff;
     font-weight: bold;
+}
+
+#tanchu .down {
+    position: fixed;
+    right: 38px;
+    top: 110px;
+    display: block;
+    cursor: pointer;
+    color: #fff;
+    font-weight: bold;
+}
+
+#tanchu .down i {
+    font-size: 44px;
+    color: white;
 }
 
 #tanchu img {
