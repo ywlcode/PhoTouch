@@ -7,8 +7,8 @@
 | GET  | "/signup"         | 无                      | 注册页面                                     | HTML                                     | 0                |
 | GET  | "/wj"             | 无                      | 忘记密码页面                                 | HTML                                     | 0                |
 | POST | "/user/login"     | name  && pwd            | 登录表单,设定cookie:user:~~                  | 200 : string: "YES" ,201:string:"NO"     | 0                |
-| POST | "/signup/email"   | email                   | 注册页面                                     | 200 : string: "YES" ,201:string:"NO"     | 0                |
-| POST | "/signup/up"      | code                    | 注册页面                                     | 200 : string: "YES" ,201:string:"NO"     | 0                |
+| POST | "/signup/email"   | email                   | 注册页面                                     | 200 : string: "YES"                      | 0                |
+| POST | "/signup/up"      | code,pwd和emailname     | 注册页面                                     | 200 : string: "YES" ,201:string:"NO"     | 0                |
 | POST | "/download"       | url                     | 下载                                         | 图片文件                                 | 0                |
 | POST | "/img/rand"       | sum 数量                | 获取随机公有图片的缩略图                     | JSON:URL......图片信息,,按推荐和点赞数量 | 0                |
 | POST | "/img/big"        | minurl                  | 获取图片的大图URL                            | string: URL 大图地址                     | 0                |

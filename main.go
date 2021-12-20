@@ -13,6 +13,7 @@ import (
 	"math/rand"
 	"mime/multipart"
 	"net/http"
+	"net/smtp"
 	"os"
 	"path"
 	"photouch/bindata"
@@ -23,6 +24,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jordan-wright/email"
 )
 
 // 运行密钥,从config.json中读取
@@ -91,6 +93,9 @@ type usermanage struct {
 // 管理用户登录
 var live map[string]usermanage
 
+// 注册验证码
+var code map[string]string
+
 // 初始化config , mysql数据库句柄 和 随机值
 func init() {
 	fmt.Println("初始化")
@@ -119,6 +124,7 @@ func init() {
 	}
 	fmt.Println("Connected database succeeded")
 	live = make(map[string]usermanage)
+	code = make(map[string]string)
 	todayrand = strconv.Itoa(rand.Intn(100000))
 	fmt.Println("----------------------------------")
 }
@@ -374,6 +380,19 @@ func Auth() gin.HandlerFunc {
 	}
 }
 
+func SendMail(toemail string, emailcode string) {
+	e := email.NewEmail()
+	e.From = "PhoTouch APP Registration verification code" + "<1589292300@qq.com>"
+	e.To = []string{toemail}
+	e.Subject = "Registration verification code"
+	e.HTML = []byte("<h1>you code is " + emailcode + "</h1>")
+	auth := smtp.PlainAuth("", "1589292300@qq.com", "kwtrsuisbscdbaac", "smtp.qq.com")
+	err := e.Send("smtp.qq.com:25", auth)
+	if err != nil {
+		log.Println("Send error")
+	}
+}
+
 // 主程序
 func main() {
 	router := gin.New()
@@ -405,9 +424,9 @@ func main() {
 	router.GET("/wj", wj)
 
 	//不需要登录认证的
-	router.POST("/user/login", loginkk) // 登录验证
-	//router.POST("/signup/email") // 发送验证码 重复注册问题
-	//router.POST("/signup/up") // 检验验证码正确性
+	router.POST("/user/login", loginkk)      // 登录验证
+	router.POST("/signup/email", signupsend) // 发送验证码 重复注册问题
+	router.POST("/signup/up", signupup)      // 检验验证码正确性
 	router.GET("/img/rand", randimgpublic)
 	//router.POST("/download", downloadimg) //下载图片地址
 	router.POST("/img/big", bigimgpublic) // 获取大图API
@@ -537,4 +556,36 @@ func goodgood(c *gin.Context) {
 		}
 	}
 	c.String(http.StatusOK, "ok")
+}
+
+func signupsend(c *gin.Context) {
+	emailname := c.PostForm("email")
+	randcode := strconv.Itoa(rand.Intn(100000))
+	code[randcode] = emailname
+	SendMail(emailname, randcode)
+	c.String(http.StatusOK, "YES")
+}
+
+func signupup(c *gin.Context) {
+	emailcode := c.PostForm("code")
+	emailname := c.PostForm("emailname")
+	password := c.PostForm("pwd")
+	kk, ok := code[emailcode]
+	if ok {
+		if kk == emailname {
+			result, err := db.Exec("INSERT INTO user (email,pwd) VALUES (?, ?)", emailname, password)
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = result.LastInsertId()
+			if err != nil {
+				log.Fatal(err)
+			}
+			c.String(http.StatusOK, "YES")
+		} else {
+			c.String(http.StatusOK, "NO")
+		}
+	} else {
+		c.String(http.StatusOK, "NO")
+	}
 }
