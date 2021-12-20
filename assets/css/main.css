@@ -69,6 +69,7 @@ body {
 
 .uplan {
     position: sticky;
+    display: block;
     top:0;
     width: 100%;
     height: 70px;

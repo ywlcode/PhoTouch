@@ -81,7 +81,6 @@ var db *sql.DB
 var Config Key
 
 // 此时随机值
-
 var todayrand string
 
 // mapcookie结构
@@ -330,10 +329,75 @@ func changeimgquan(minurl string, oldtable string, newtable string) {
 	_, _ = db.Exec("delete from "+oldtable+" WHERE minurl = ?", minurl)
 }
 
+/*
 // 检索出用户的某年某月的照片的minurl列表, 年, 月, 用户id 返回 imgpublic切片
 func SelectByMonth(year string, month string, userid int) []imginformation {
 	var albums []imginformation
 	rows, err := db.Query("SELECT minurl FROM imguser WHERE year = ? AND month = ? AND userid = ?", year, month, userid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var alb imginformation
+		if err := rows.Scan(&alb.Url); err != nil {
+			log.Fatal(err)
+		}
+		albums = append(albums, alb)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return albums
+}
+*/
+
+// 检索出用户所有分享的照片的minurl列表, 按年月日排序,返回 imgpublic切片
+func Selectuserpublic(userid int) []imginformation {
+	var albums []imginformation
+	rows, err := db.Query("SELECT minurl FROM imgpublic WHERE userid = ? ORDER BY year DESC,month DESC,day DESC", userid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var alb imginformation
+		if err := rows.Scan(&alb.Url); err != nil {
+			log.Fatal(err)
+		}
+		albums = append(albums, alb)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return albums
+}
+
+// 检索出用户所有私有的照片的minurl列表, 按年月日排序,返回 imgpublic切片
+func Selectuser(userid int) []imginformation {
+	var albums []imginformation
+	rows, err := db.Query("SELECT minurl FROM imguser WHERE userid = ? ORDER BY year DESC,month DESC,day DESC", userid)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var alb imginformation
+		if err := rows.Scan(&alb.Url); err != nil {
+			log.Fatal(err)
+		}
+		albums = append(albums, alb)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return albums
+}
+
+// 检索出用户点赞的照片的minurl列表,返回 imgpublic切片
+func Selectuserlike(userid int) []imginformation {
+	var albums []imginformation
+	rows, err := db.Query("SELECT minurl FROM good WHERE userid = ?", userid)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -380,6 +444,7 @@ func Auth() gin.HandlerFunc {
 	}
 }
 
+// 发送邮件
 func SendMail(toemail string, emailcode string) {
 	e := email.NewEmail()
 	e.From = "PhoTouch APP Registration verification code" + "<1589292300@qq.com>"
@@ -395,6 +460,7 @@ func SendMail(toemail string, emailcode string) {
 
 // 主程序
 func main() {
+	go timeToTime() // 定时器
 	router := gin.New()
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
@@ -424,24 +490,26 @@ func main() {
 	router.GET("/wj", wj)
 
 	//不需要登录认证的
-	router.POST("/user/login", loginkk)      // 登录验证
-	router.POST("/signup/email", signupsend) // 发送验证码 重复注册问题
-	router.POST("/signup/up", signupup)      // 检验验证码正确性
+	router.POST("/user/login", loginkk)
+	router.POST("/signup/email", signupsend)
+	router.POST("/signup/up", signupup)
+	//router.POST("/download", downloadimg)
 	router.GET("/img/rand", randimgpublic)
-	//router.POST("/download", downloadimg) //下载图片地址
-	router.POST("/img/big", bigimgpublic) // 获取大图API
+	router.POST("/img/big", bigimg)
 
 	// 需要登录认证的
-	//router.POST("/img/user/like")
-	//router.POST("/img/user/all")
-	//router.POST("/img/user/time")
-	//router.POST("/img/user/month")
-	router.POST("/upload", uploadimgfromuser) // 用户上传图片
-	router.POST("/change", changeimg)         // 改变公有私有权限, 分享或取消分享
-	router.POST("/good", goodgood)            //点赞
+	router.GET("/img/user/like", userlike)
+	router.GET("/img/user/all", userallimg)
+	router.GET("/img/user/share", usershare)
+	//router.GET("/img/user/time")
+	//router.GET("/img/user/month")
+	router.POST("/upload", uploadimgfromuser)
+	router.POST("/change", changeimg)
+	router.POST("/good", goodgood)
 	router.Run(":8000")
 }
 
+// 主页
 func index(c *gin.Context) {
 	con := randminimg32()
 	data := make(map[string][]imginformation) // 注意这里只能是 !!! map
@@ -449,18 +517,22 @@ func index(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", data)
 }
 
+// 登录
 func login(c *gin.Context) {
 	c.HTML(http.StatusOK, "login.html", "")
 }
 
+// 注册
 func signup(c *gin.Context) {
 	c.HTML(http.StatusOK, "signup.html", "")
 }
 
+// 忘记密码
 func wj(c *gin.Context) {
 	c.HTML(http.StatusOK, "wj.html", "")
 }
 
+// 登录验证
 func loginkk(c *gin.Context) {
 	email := c.PostForm("name")
 	pwd := c.PostForm("pwd")
@@ -494,6 +566,7 @@ func loginkk(c *gin.Context) {
 	}
 }
 
+// 用户上传图片
 func uploadimgfromuser(c *gin.Context) {
 	form, _ := c.MultipartForm()
 	files := form.File["files[]"]
@@ -506,17 +579,23 @@ func uploadimgfromuser(c *gin.Context) {
 	AddimgFromuser(ID)
 }
 
+// 热门随机32张图片
 func randimgpublic(c *gin.Context) {
 	con := randminimg32()
 	c.JSON(http.StatusOK, con)
 }
 
-func bigimgpublic(c *gin.Context) {
+// 获取大图url
+func bigimg(c *gin.Context) {
 	kkurl := c.PostForm("minurl") // 提取参数
 	ans := bigimgurl("imgpublic", kkurl)
+	if ans == "" {
+		ans = bigimgurl("imguser", kkurl)
+	}
 	c.String(http.StatusOK, ans)
 }
 
+// 改变公有私有权限, 分享或取消分享
 func changeimg(c *gin.Context) {
 	minurl := c.PostForm("minurl") // 提取参数
 	old := c.PostForm("old")
@@ -525,6 +604,7 @@ func changeimg(c *gin.Context) {
 	c.String(http.StatusOK, "YES")
 }
 
+// 用户点赞
 func goodgood(c *gin.Context) {
 	minurl := c.PostForm("minurl")
 	ID := c.MustGet("id").(int)
@@ -545,7 +625,7 @@ func goodgood(c *gin.Context) {
 		log.Fatal(err)
 	}
 	if len(albums) >= 1 {
-		_, err = db.Exec("delete from good WHERE userid = ?", ID)
+		_, err = db.Exec("delete from good WHERE minurl = ?", minurl)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -558,6 +638,7 @@ func goodgood(c *gin.Context) {
 	c.String(http.StatusOK, "ok")
 }
 
+// 发送验证码
 func signupsend(c *gin.Context) {
 	emailname := c.PostForm("email")
 	randcode := strconv.Itoa(rand.Intn(100000))
@@ -566,6 +647,7 @@ func signupsend(c *gin.Context) {
 	c.String(http.StatusOK, "YES")
 }
 
+// 检验验证码正确性 添加用户到DB
 func signupup(c *gin.Context) {
 	emailcode := c.PostForm("code")
 	emailname := c.PostForm("emailname")
@@ -581,6 +663,7 @@ func signupup(c *gin.Context) {
 			if err != nil {
 				log.Fatal(err)
 			}
+			delete(code, emailcode)
 			c.String(http.StatusOK, "YES")
 		} else {
 			c.String(http.StatusOK, "NO")
@@ -588,4 +671,38 @@ func signupup(c *gin.Context) {
 	} else {
 		c.String(http.StatusOK, "NO")
 	}
+}
+
+//	定时器
+func timeToTime() {
+	ticker := time.Tick(10 * time.Minute) //定义一个10分钟间隔的定时器
+	for tt := range ticker {
+		for iid, n := range live {
+			if time.Now().Before(n.last) {
+				delete(live, iid)
+				fmt.Println(tt, " user "+iid+" out")
+			}
+		}
+	}
+}
+
+// 用户所有私有图片
+func userallimg(c *gin.Context) {
+	ID := c.MustGet("id").(int)
+	data := Selectuser(ID)
+	c.JSON(http.StatusOK, data)
+}
+
+// 用户所有分享的图片
+func usershare(c *gin.Context) {
+	ID := c.MustGet("id").(int)
+	data := Selectuserpublic(ID)
+	c.JSON(http.StatusOK, data)
+}
+
+// 用户所有点赞的图片
+func userlike(c *gin.Context) {
+	ID := c.MustGet("id").(int)
+	data := Selectuserlike(ID)
+	c.JSON(http.StatusOK, data)
 }

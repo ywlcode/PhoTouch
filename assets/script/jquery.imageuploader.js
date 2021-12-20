@@ -193,6 +193,7 @@
                         processData: false,
                         beforeSend: function() {
                             dom.submitButton.off('click', uploadSubmitHandler);
+                            dom.submitButton.text("请耐心等待")
                         },
                         success: function (result) {
                             var list = document.querySelectorAll(".js-upload-remove-button")
