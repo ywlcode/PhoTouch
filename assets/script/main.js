@@ -148,11 +148,15 @@ $(document).ready(function () {
             var uu = $(this).parents(".show").children("img").attr("src");
             $.post("/change", { minurl: uu,old:"imgpublic",new:"imguser"});
             $(this).parents(".show").remove();
+            var imgList = $('<div class="show"><img src="https://bu.dusays.com/2021/12/20/20360f9466d6a.jpg" alt=""></div>');
+            $(".indeximgs").append(imgList);
         }   
         if (where == 6) {
             var uu = $(this).parents(".show").children("img").attr("src");
             $.post("/change", { minurl: uu,old:"imguser",new:"imgpublic"});
             $(this).parents(".show").remove();
+            var imgList = $('<div class="show"><img src="https://bu.dusays.com/2021/12/20/20360f9466d6a.jpg" alt=""></div>');
+            $(".indeximgs").append(imgList);
         }
     })
 })
