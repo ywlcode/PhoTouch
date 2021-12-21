@@ -466,8 +466,8 @@ func main() {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(Auth())
-	router.Static("/assets", "./assets")
-	router.LoadHTMLGlob("assets/templates/*")
+	//router.Static("/assets", "./assets")
+	//router.LoadHTMLGlob("assets/templates/*")
 	// 打包静态文件 不适合开发阶段
 	fs := assetfs.AssetFS{
 		Asset:     bindata.Asset,
