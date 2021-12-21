@@ -7,7 +7,7 @@
 ## linux上 安装
 
 1. 下载photouch文件后,给予可执行权限
-2. mysql数据库中创建数据库, 导入img.sql
+2. mysql数据库中创建数据库, 导入create.sql
 
 3. 注意要创建config.json文件,内部存关键信息,
 
