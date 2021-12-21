@@ -24,6 +24,8 @@ CREATE TABLE imgpublic (
   month      INT NOT NULL,
   day        INT NOT NULL,
   userid     INT NOT NULL,
+  imgbuid    varchar(255) NOT NULL,
+  imgminid   varchar(255) NOT NULL,
   PRIMARY KEY (`id`) 
 );
 
@@ -39,6 +41,8 @@ CREATE TABLE imguser (
   month      INT NOT NULL,
   day        INT NOT NULL,
   userid     INT NOT NULL,
+  imgbuid    varchar(255) NOT NULL,
+  imgminid   varchar(255) NOT NULL,
   PRIMARY KEY (`id`) 
 );
 
@@ -47,7 +51,7 @@ DESCRIBE imguser;
 DROP TABLE IF EXISTS good;  /*  图片点赞数 */
 CREATE TABLE good (
   userid INT NOT NULL,
-  imgid  INT NOT NULL,
+  minurl varchar(255) NOT NULL
 );
 
 DESCRIBE good;
