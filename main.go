@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/disintegration/imaging"
+	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jordan-wright/email"
@@ -467,7 +468,7 @@ func main() {
 	router.Use(Auth())
 	router.Static("/assets", "./assets")
 	router.LoadHTMLGlob("assets/templates/*")
-	/*  // 打包静态文件 不适合开发阶段
+	// 打包静态文件 不适合开发阶段
 	fs := assetfs.AssetFS{
 		Asset:     bindata.Asset,
 		AssetDir:  bindata.AssetDir,
@@ -480,7 +481,7 @@ func main() {
 		log.Fatal(err)
 	}
 	router.SetHTMLTemplate(t)
-	*/
+
 	PathExists("tempimg")
 
 	// 四个页面
