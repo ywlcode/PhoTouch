@@ -448,12 +448,12 @@ func Auth() gin.HandlerFunc {
 // 发送邮件
 func SendMail(toemail string, emailcode string) {
 	e := email.NewEmail()
-	e.From = "PhoTouch APP Registration verification code" + "<1589292300@qq.com>"
+	e.From = "PhoTouch APP Registration verification code" + "<" + Config.Email_user + ">"
 	e.To = []string{toemail}
 	e.Subject = "Registration verification code"
 	e.HTML = []byte("<h1>you code is " + emailcode + "</h1>")
-	auth := smtp.PlainAuth("", "1589292300@qq.com", "kwtrsuisbscdbaac", "smtp.qq.com")
-	err := e.Send("smtp.qq.com:25", auth)
+	auth := smtp.PlainAuth("", Config.Email_user, Config.Email_key, "smtp.qq.com")
+	err := e.Send("smtp.qq.com:587", auth)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -642,6 +642,7 @@ func goodgood(c *gin.Context) {
 // 发送验证码
 func signupsend(c *gin.Context) {
 	emailname := c.PostForm("email")
+	fmt.Println(emailname)
 	randcode := strconv.Itoa(rand.Intn(100000))
 	code[randcode] = emailname
 	SendMail(emailname, randcode)
